@@ -438,8 +438,7 @@ class PerformanceTracker(object):
             self.all_benchmark_returns[completed_date])
 
         # increment the day counter before we move markers forward.
-        if not self.fast_backtest:
-			self.day_count += 1.0
+        self.day_count += 1.0
 
         # Take a snapshot of our current performance to return to the
         # browser.
@@ -452,8 +451,7 @@ class PerformanceTracker(object):
             return daily_update
 
         # move the market day markers forward
-        if not self.fast_backtest:
-			self.market_open, self.market_close = \
+        self.market_open, self.market_close = \
             trading.environment.next_open_and_close(self.market_open)
 
         # Roll over positions to current day.
@@ -478,12 +476,15 @@ class PerformanceTracker(object):
         log.info("last close: {d}".format(
             d=self.sim_params.last_close))
 
-        bms = self.cumulative_risk_metrics.benchmark_returns
-        ars = self.cumulative_risk_metrics.algorithm_returns
-        self.risk_report = risk.RiskReport(
-            ars,
-            self.sim_params,
-            benchmark_returns=bms)
+        if not self.fast_backtest:
+			bms = self.cumulative_risk_metrics.benchmark_returns
+			ars = self.cumulative_risk_metrics.algorithm_returns
+			self.risk_report = risk.RiskReport(
+				ars,
+				self.sim_params,
+				benchmark_returns=bms)
 
-        risk_dict = self.risk_report.to_dict()
-        return risk_dict
+			risk_dict = self.risk_report.to_dict()
+			return risk_dict
+        else:
+			return []

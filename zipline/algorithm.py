@@ -501,8 +501,7 @@ class TradingAlgorithm(object):
             # convert perf dict to pandas dataframe
             daily_stats = self._create_daily_stats(perfs)
 
-        if not self.fast_backtest:
-			self.analyze(daily_stats)
+        self.analyze(daily_stats)
 
         return daily_stats
 
@@ -513,20 +512,16 @@ class TradingAlgorithm(object):
         # of daily_perf. Could potentially raise or log a
         # warning.
         
-        if not self.fast_backtest:
-			for perf in perfs:
-				if 'daily_perf' in perf:
-
-					perf['daily_perf'].update(
-						perf['daily_perf'].pop('recorded_vars')
-					)
-					perf['daily_perf'].update(perf['cumulative_risk_metrics'])
-					daily_perfs.append(perf['daily_perf'])
-				else:
-					self.risk_report = perf
-		
-		# end of next block
-		
+        for perf in perfs:
+			if 'daily_perf' in perf:
+				perf['daily_perf'].update(
+					perf['daily_perf'].pop('recorded_vars')
+				)
+				perf['daily_perf'].update(perf['cumulative_risk_metrics'])
+				daily_perfs.append(perf['daily_perf'])
+			else:
+				self.risk_report = perf
+					
         daily_dts = [np.datetime64(perf['period_close'], utc=True)
                      for perf in daily_perfs]
         daily_stats = pd.DataFrame(daily_perfs, index=daily_dts)

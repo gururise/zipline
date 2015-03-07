@@ -181,10 +181,7 @@ class AlgorithmSimulator(object):
                     self.algo.account_needs_update = True
                     self.algo.performance_needs_update = True
 
-            if not self.fast_backtest:
-				risk_message = self.algo.perf_tracker.handle_simulation_end()
-            else:
-				risk_message = None
+            risk_message = self.algo.perf_tracker.handle_simulation_end()
             yield risk_message
 
     def _process_snapshot(self, dt, snapshot, instant_fill):
