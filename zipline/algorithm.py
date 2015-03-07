@@ -87,6 +87,16 @@ from zipline.history.history_container import HistoryContainer
 
 DEFAULT_CAPITAL_BASE = float("1.0e5")
 
+####################################################################
+# Performance Backtest: bypassing any performance and risk metrics
+# -> track variable 'fast_backtest' to see implications
+# -> Modified files:
+#		-> algorithm.py
+#		-> tracker.py
+#		-> tradesimulation.py
+####################################################################
+DEFAULT_FAST_BACKTEST = False
+
 
 class TradingAlgorithm(object):
     """
@@ -141,6 +151,10 @@ class TradingAlgorithm(object):
             environment : str <default: 'zipline'>
                The environment that this algorithm is running in.
         """
+        
+        # Performance Setup
+        self.fast_backtest = kwargs.pop('fast_backtest', DEFAULT_FAST_BACKTEST)
+        
         self.datetime = None
 
         self.registered_transforms = {}
@@ -172,7 +186,8 @@ class TradingAlgorithm(object):
         if self.sim_params is None:
             self.sim_params = create_simulation_parameters(
                 capital_base=self.capital_base
-            )
+            )    
+        self.sim_params.fast_backtest = self.fast_backtest
         self.perf_tracker = PerformanceTracker(self.sim_params)
 
         self.blotter = kwargs.pop('blotter', None)
@@ -486,7 +501,8 @@ class TradingAlgorithm(object):
             # convert perf dict to pandas dataframe
             daily_stats = self._create_daily_stats(perfs)
 
-        self.analyze(daily_stats)
+        if not self.fast_backtest:
+			self.analyze(daily_stats)
 
         return daily_stats
 
@@ -496,17 +512,21 @@ class TradingAlgorithm(object):
         # TODO: the loop here could overwrite expected properties
         # of daily_perf. Could potentially raise or log a
         # warning.
-        for perf in perfs:
-            if 'daily_perf' in perf:
+        
+        if not self.fast_backtest:
+			for perf in perfs:
+				if 'daily_perf' in perf:
 
-                perf['daily_perf'].update(
-                    perf['daily_perf'].pop('recorded_vars')
-                )
-                perf['daily_perf'].update(perf['cumulative_risk_metrics'])
-                daily_perfs.append(perf['daily_perf'])
-            else:
-                self.risk_report = perf
-
+					perf['daily_perf'].update(
+						perf['daily_perf'].pop('recorded_vars')
+					)
+					perf['daily_perf'].update(perf['cumulative_risk_metrics'])
+					daily_perfs.append(perf['daily_perf'])
+				else:
+					self.risk_report = perf
+		
+		# end of next block
+		
         daily_dts = [np.datetime64(perf['period_close'], utc=True)
                      for perf in daily_perfs]
         daily_stats = pd.DataFrame(daily_perfs, index=daily_dts)

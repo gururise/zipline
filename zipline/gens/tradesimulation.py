@@ -25,7 +25,6 @@ from zipline.gens.utils import hash_args
 
 log = Logger('Trade Simulation')
 
-
 class AlgorithmSimulator(object):
 
     EMISSION_TO_PERF_KEY_MAP = {
@@ -41,6 +40,9 @@ class AlgorithmSimulator(object):
         return self.__class__.__name__ + hash_args()
 
     def __init__(self, algo, sim_params):
+
+		# Performance Setup
+        self.fast_backtest = sim_params.fast_backtest
 
         # ==============
         # Simulation
@@ -179,7 +181,10 @@ class AlgorithmSimulator(object):
                     self.algo.account_needs_update = True
                     self.algo.performance_needs_update = True
 
-            risk_message = self.algo.perf_tracker.handle_simulation_end()
+            if not self.fast_backtest:
+				risk_message = self.algo.perf_tracker.handle_simulation_end()
+            else:
+				risk_message = None
             yield risk_message
 
     def _process_snapshot(self, dt, snapshot, instant_fill):
@@ -294,19 +299,20 @@ class AlgorithmSimulator(object):
         # updated_portfolio has already been called this dt.
         self.algo.updated_portfolio()
         self.algo.updated_account()
-
-        rvars = self.algo.recorded_vars
-        if self.algo.perf_tracker.emission_rate == 'daily':
-            perf_message = \
-                self.algo.perf_tracker.handle_market_close_daily()
-            perf_message['daily_perf']['recorded_vars'] = rvars
-            return perf_message
-
-        elif self.algo.perf_tracker.emission_rate == 'minute':
-            self.algo.perf_tracker.handle_minute_close(dt)
-            perf_message = self.algo.perf_tracker.to_dict()
-            perf_message['minute_perf']['recorded_vars'] = rvars
-            return perf_message
+        
+        if not self.fast_backtest:
+			rvars = self.algo.recorded_vars
+			if self.algo.perf_tracker.emission_rate == 'daily':
+				perf_message = \
+					self.algo.perf_tracker.handle_market_close_daily()
+				perf_message['daily_perf']['recorded_vars'] = rvars
+				return perf_message
+	
+			elif self.algo.perf_tracker.emission_rate == 'minute':
+				self.algo.perf_tracker.handle_minute_close(dt)
+				perf_message = self.algo.perf_tracker.to_dict()
+				perf_message['minute_perf']['recorded_vars'] = rvars
+				return perf_message
 
     def update_universe(self, event):
         """

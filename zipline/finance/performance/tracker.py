@@ -81,7 +81,9 @@ class PerformanceTracker(object):
 
     @with_environment()
     def __init__(self, sim_params, env=None):
-
+		# Performance Setup
+        self.fast_backtest = sim_params.fast_backtest
+		
         self.sim_params = sim_params
 
         self.period_start = self.sim_params.period_start
@@ -436,7 +438,8 @@ class PerformanceTracker(object):
             self.all_benchmark_returns[completed_date])
 
         # increment the day counter before we move markers forward.
-        self.day_count += 1.0
+        if not self.fast_backtest:
+			self.day_count += 1.0
 
         # Take a snapshot of our current performance to return to the
         # browser.
@@ -449,7 +452,8 @@ class PerformanceTracker(object):
             return daily_update
 
         # move the market day markers forward
-        self.market_open, self.market_close = \
+        if not self.fast_backtest:
+			self.market_open, self.market_close = \
             trading.environment.next_open_and_close(self.market_open)
 
         # Roll over positions to current day.
