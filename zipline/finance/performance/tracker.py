@@ -482,17 +482,17 @@ class PerformanceTracker(object):
             d=self.sim_params.last_close))
 
         if not self.fast_backtest:
-			bms = self.cumulative_risk_metrics.benchmark_returns
-			ars = self.cumulative_risk_metrics.algorithm_returns
-			self.risk_report = risk.RiskReport(
+		bms = self.cumulative_risk_metrics.benchmark_returns
+		ars = self.cumulative_risk_metrics.algorithm_returns
+		self.risk_report = risk.RiskReport(
 				ars,
 				self.sim_params,
 				benchmark_returns=bms)
 
         	risk_dict = self.risk_report.to_dict()
         	return risk_dict
-		else:
-			return []
+	else:
+		return []
 
     def __getstate__(self):
         state_dict = \
