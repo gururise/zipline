@@ -25,7 +25,6 @@ from zipline.protocol import (
 
 log = Logger('Trade Simulation')
 
-
 class AlgorithmSimulator(object):
 
     EMISSION_TO_PERF_KEY_MAP = {
@@ -34,6 +33,9 @@ class AlgorithmSimulator(object):
     }
 
     def __init__(self, algo, sim_params):
+
+		# Performance Setup
+        self.fast_backtest = sim_params.fast_backtest
 
         # ==============
         # Simulation
@@ -357,19 +359,20 @@ class AlgorithmSimulator(object):
         # updated_portfolio has already been called this dt.
         self.algo.updated_portfolio()
         self.algo.updated_account()
-
-        rvars = self.algo.recorded_vars
-        if self.algo.perf_tracker.emission_rate == 'daily':
-            perf_message = \
-                self.algo.perf_tracker.handle_market_close_daily()
-            perf_message['daily_perf']['recorded_vars'] = rvars
-            return perf_message
-
-        elif self.algo.perf_tracker.emission_rate == 'minute':
-            self.algo.perf_tracker.handle_minute_close(dt)
-            perf_message = self.algo.perf_tracker.to_dict()
-            perf_message['minute_perf']['recorded_vars'] = rvars
-            return perf_message
+        
+        if not self.fast_backtest:
+			rvars = self.algo.recorded_vars
+			if self.algo.perf_tracker.emission_rate == 'daily':
+				perf_message = \
+					self.algo.perf_tracker.handle_market_close_daily()
+				perf_message['daily_perf']['recorded_vars'] = rvars
+				return perf_message
+	
+			elif self.algo.perf_tracker.emission_rate == 'minute':
+				self.algo.perf_tracker.handle_minute_close(dt)
+				perf_message = self.algo.perf_tracker.to_dict()
+				perf_message['minute_perf']['recorded_vars'] = rvars
+				return perf_message
 
     def update_universe(self, event):
         """

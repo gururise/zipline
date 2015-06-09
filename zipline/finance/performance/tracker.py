@@ -87,7 +87,9 @@ class PerformanceTracker(object):
 
     @with_environment()
     def __init__(self, sim_params, env=None):
-
+		# Performance Setup
+        self.fast_backtest = sim_params.fast_backtest
+		
         self.sim_params = sim_params
 
         self.period_start = self.sim_params.period_start
@@ -480,17 +482,20 @@ class PerformanceTracker(object):
         log.info("last close: {d}".format(
             d=self.sim_params.last_close))
 
-        bms = self.cumulative_risk_metrics.benchmark_returns
-        ars = self.cumulative_risk_metrics.algorithm_returns
-        acl = self.cumulative_risk_metrics.algorithm_cumulative_leverages
-        self.risk_report = risk.RiskReport(
-            ars,
-            self.sim_params,
-            benchmark_returns=bms,
-            algorithm_leverages=acl)
+        if not self.fast_backtest:
+		bms = self.cumulative_risk_metrics.benchmark_returns
+		ars = self.cumulative_risk_metrics.algorithm_returns
+		acl = self.cumulative_risk_metrics.algorithm_cumulative_leverages
+		self.risk_report = risk.RiskReport(
+				ars,
+				self.sim_params,
+				benchmark_returns=bms,
+				algorithm_leverages=acl)
 
-        risk_dict = self.risk_report.to_dict()
-        return risk_dict
+        	risk_dict = self.risk_report.to_dict()
+        	return risk_dict
+	else:
+		return []
 
     def __getstate__(self):
         state_dict = \
